@@ -1,20 +1,37 @@
-# Use the official Node.js image (lightweight Alpine version for production)
-FROM node:19-alpine3.15
+FROM node:19-alpine3.15 as builder
 
-# Set the working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Copy only the package files first to leverage Docker layer caching
+# Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --production
+RUN npm install
 
-# Copy the rest of the application code to the container
+# Copy source files
 COPY . .
 
-# Expose the port your application runs on (e.g., 3000)
-EXPOSE 3000
+# Build frontend
+RUN npm run build
 
-# Define the command to start the application
+# Production stage
+FROM node:19-alpine3.15
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm install --production
+
+# Copy built frontend and server files
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server.js .
+
+# Expose port (configurable via environment variable)
+EXPOSE ${PORT:-3000}
+
+# Start the server
 CMD ["npm", "start"]
