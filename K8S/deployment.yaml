@@ -1,38 +1,58 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: testwebsite
+  name: mspl-ecommerce
   labels:
-    app: testwebsite
+    app: mspl-ecommerce
 spec:
-  replicas: 3  # Number of pods to create
+  replicas: 3
   selector:
     matchLabels:
-      app: testwebsite
+      app: mspl-ecommerce
   template:
     metadata:
       labels:
-        app: testwebsite
+        app: mspl-ecommerce
     spec:
       containers:
-        - name: testwebsite
-          image: maheshyav/fileweb:v1 
+        - name: mspl-ecommerce
+          image: mspl-ecommerce:latest
           ports:
-            - containerPort: 80
+            - containerPort: 3000
           env:
+            - name: PORT
+              value: "3000"
             - name: NODE_ENV
-              value: production  
-      restartPolicy: Always
+              value: "production"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: testwebsite-service
+  name: mspl-ecommerce-service
 spec:
   selector:
-    app: testwebsite
+    app: mspl-ecommerce
   ports:
     - protocol: TCP
-      port: 8081
-      targetPort: 80
+      port: 80
+      targetPort: 3000
   type: LoadBalancer
