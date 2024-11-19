@@ -1,37 +1,34 @@
+# Use a compatible Node.js version
 FROM node:18-alpine as builder
 
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package.json and install dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy source files
+# Copy the rest of the application code
 COPY . .
 
-# Build frontend
+# Build the application
 RUN npm run build
 
-# Production stage
-FROM node:19-alpine3.15
+# Use a smaller image for serving the app
+FROM node:18-alpine as production
 
+# Set the working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy build output from the builder stage
+COPY --from=builder /app/dist ./dist
 
-# Install production dependencies only
+# Install only production dependencies
+COPY package*.json ./
 RUN npm install --production
 
-# Copy built frontend and server files
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server.js .
+# Expose the port
+EXPOSE 3000
 
-# Expose port (configurable via environment variable)
-EXPOSE ${PORT:-3000}
-
-# Start the server
-CMD ["npm", "start"]
+# Start the application
+CMD ["npm", "run", "start"]
