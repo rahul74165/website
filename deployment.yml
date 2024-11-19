@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testwebsite
+  labels:
+    app: testwebsite
+spec:
+  replicas: 3  # Number of pods to create
+  selector:
+    matchLabels:
+      app: testwebsite
+  template:
+    metadata:
+      labels:
+        app: testwebsite
+    spec:
+      containers:
+        - name: testwebsite
+          image: maheshyav/fileweb:v1 
+          ports:
+            - containerPort: 80
+          env:
+            - name: NODE_ENV
+              value: production  
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: testwebsite-service
+spec:
+  selector:
+    app: testwebsite
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 80
+  type: LoadBalancer
